@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .bg-app {
+        background: url('/images/auth.bg.png') no-repeat center center;
+        background-size: cover;
+    }
+}
