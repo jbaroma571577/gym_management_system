@@ -17,39 +17,23 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Vite CSS only for guest pages -->
-    @vite(['resources/css/app.css'])
+    <!-- Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Page-specific styles -->
     @stack('styles')
 </head>
 
-<body class="font-sans text-white antialiased bg-app min-h-screen relative">
+<body class="font-sans text-white antialiased bg-app min-h-screen relative overflow-x-hidden">
 
     <!-- Background Overlay -->
     <div class="absolute inset-0 bg-black/75"></div>
 
     <!-- Main Content -->
-    <div class="relative min-h-screen flex flex-col justify-center items-center px-4 py-10">
+    <div class="relative min-h-screen w-full">
 
-        <div class="w-full sm:max-w-md bg-black/70 border border-orange-500/20 shadow-2xl backdrop-blur-xl rounded-[32px] overflow-hidden">
+        {{ $slot }}
 
-            <!-- Header -->
-            <div class="p-6 border-b border-orange-500/10 bg-black/60 text-center">
-                <h1 class="text-3xl font-extrabold tracking-tight text-orange-400">
-                    GYM PORTAL
-                </h1>
-                <p class="mt-2 text-sm text-gray-300">
-                    Secure sign in or create your account with a premium fitness style
-                </p>
-            </div>
-
-            <!-- Page Content -->
-            <div class="px-6 py-8">
-                {{ $slot }}
-            </div>
-
-        </div>
     </div>
 
     <!-- Page-specific scripts -->
