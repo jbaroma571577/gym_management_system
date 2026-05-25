@@ -31,13 +31,30 @@ class MembershipController extends Controller
             ]);
         }
 
-        Membership::create([
+        $membership = Membership::create([
             'member_id' => $member->id,
             'plan' => $request->plan,
             'payment_method' => $request->payment_method,
             'reference_number' => $request->reference_number,
             'status' => 'pending'
         ]);
+
+        $amounts = [
+            'Basic' => 500.00,
+            'Premium' => 800.00,
+            'VIP' => 1200.00,
+        ];
+
+        \App\Models\Payment::create([
+            'membership_id' => $membership->id,
+            'amount' => $amounts[$request->plan] ?? 0,
+            'reference_number' => $request->reference_number,
+            'status' => 'pending',
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Membership application submitted', 'status' => 'pending']);
+        }
 
         return redirect()->back()->with('success', 'Membership application submitted successfully! Please wait for admin approval.');
     }
@@ -50,6 +67,10 @@ class MembershipController extends Controller
             'status' => 'active'
         ]);
 
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Membership activated', 'id' => $membership->id, 'status' => $membership->status]);
+        }
+
         return redirect()->back()->with('success', 'Membership activated successfully!');
     }
 
@@ -60,6 +81,10 @@ class MembershipController extends Controller
         $membership->update([
             'status' => 'rejected'
         ]);
+
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Membership rejected', 'id' => $membership->id, 'status' => $membership->status]);
+        }
 
         return redirect()->back()->with('success', 'Membership rejected successfully!');
     }

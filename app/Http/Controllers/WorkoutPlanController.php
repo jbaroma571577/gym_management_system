@@ -28,8 +28,9 @@ class WorkoutPlanController extends Controller
     // SHOW ALL WORKOUT PLANS
     public function index()
     {
-        $plans = WorkoutPlan::latest()->get();
+        $plans = WorkoutPlan::with('member.user')->latest()->get();
+        $members = \App\Models\Member::with('user')->get();
 
-        return view('admin.workouts', compact('plans'));
+        return view('admin.workouts', compact('plans', 'members'));
     }
 }

@@ -26,6 +26,9 @@ class AttendanceController extends Controller
             ->first();
 
         if ($existingCheckIn) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'You have already checked in today!'], 409);
+            }
             return redirect()->back()->with('warning', 'You have already checked in today!');
         }
 
@@ -35,6 +38,10 @@ class AttendanceController extends Controller
             'date' => Carbon::today(),
             'time_in' => Carbon::now()->format('H:i:s'),
         ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Checked in successfully', 'checked_in' => true]);
+        }
 
         return redirect()->back()->with('success', 'Welcome! You have checked in successfully! 💪');
     }
@@ -55,6 +62,9 @@ class AttendanceController extends Controller
             ->first();
 
         if (!$attendance) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'You need to check in first!'], 404);
+            }
             return redirect()->back()->with('warning', 'You need to check in first!');
         }
 
@@ -62,6 +72,10 @@ class AttendanceController extends Controller
         $attendance->update([
             'time_out' => Carbon::now()->format('H:i:s'),
         ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Checked out successfully', 'checked_out' => true]);
+        }
 
         return redirect()->back()->with('success', 'See you next time! You have checked out successfully! 👋');
     }

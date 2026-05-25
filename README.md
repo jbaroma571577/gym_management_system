@@ -57,3 +57,30 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## SPA Frontend
+
+This repository includes a Vue 3 SPA mounted into the Blade dashboard for a premium member portal.
+
+Quick start
+
+1. Install node deps:
+
+```bash
+cd "c:/Users/Jakep/Desktop/GYM_MANAGEMENT_SYSTEM"
+npm install --legacy-peer-deps
+```
+
+2. Run Vite dev server:
+
+```bash
+npm run dev
+```
+
+3. Start Laravel (for example via `php artisan serve`) and log in. Visit `/dashboard` to view the SPA.
+
+Notes
+
+- SPA code: `resources/js` (App.vue, router, pages, components).
+- API endpoints for the SPA are available under `/api/*` and use session-auth (CSRF + cookies).
+- Charts use Chart.js via `resources/js/components/MiniChart.vue`.

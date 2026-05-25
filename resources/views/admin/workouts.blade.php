@@ -53,8 +53,8 @@
 
                 <select name="member_id" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" required>
                     <option value="">Select Member</option>
-                    @foreach(\App\Models\Member::all() as $member)
-                        <option value="{{ $member->id }}">{{ $member->user->name ?? 'Member ' . $member->id }}</option>
+                    @foreach($members as $member)
+                        <option value="{{ $member->id }}">{{ optional($member->user)->name ?? 'Member ' . $member->id }}</option>
                     @endforeach
                 </select>
 
@@ -91,9 +91,9 @@
 
                 @forelse($plans as $plan)
                 <tr class="border-b border-white/5">
-                    <td class="p-2">{{ $plan->member->user->name ?? 'N/A' }}</td>
+                    <td class="p-2">{{ optional($plan->member->user)->name ?? 'N/A' }}</td>
                     <td class="p-2 text-orange-400">{{ $plan->program_type }}</td>
-                    <td class="p-2">{{ Str::limit($plan->description, 50) }}</td>
+                    <td class="p-2">{{ \Illuminate\Support\Str::limit($plan->description, 50) }}</td>
                     <td class="p-2">{{ $plan->created_at->format('M d, Y') }}</td>
                 </tr>
                 @empty

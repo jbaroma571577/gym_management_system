@@ -13,6 +13,10 @@ class MemberController extends Controller
     public function index()
     {
         $members = Member::all();
+        if (request()->wantsJson()) {
+            return response()->json($members);
+        }
+
         return view('admin.members.index', compact('members'));
     }
 
@@ -35,7 +39,11 @@ class MemberController extends Controller
             'goal' => 'nullable',
         ]);
 
-        Member::create($request->all());
+        $member = Member::create($request->all());
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Member created', 'member' => $member]);
+        }
 
         return redirect()->route('members.index')->with('success', 'Member created successfully');
     }
@@ -46,6 +54,10 @@ class MemberController extends Controller
     public function show(string $id)
     {
         $member = Member::findOrFail($id);
+        if (request()->wantsJson()) {
+            return response()->json($member);
+        }
+
         return view('admin.members.show', compact('member'));
     }
 
@@ -55,6 +67,10 @@ class MemberController extends Controller
     public function edit(string $id)
     {
         $member = Member::findOrFail($id);
+        if (request()->wantsJson()) {
+            return response()->json($member);
+        }
+
         return view('admin.members.edit', compact('member'));
     }
 
@@ -66,6 +82,9 @@ class MemberController extends Controller
         $member = Member::findOrFail($id);
 
         $member->update($request->all());
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Member updated', 'member' => $member]);
+        }
 
         return redirect()->route('members.index')->with('success', 'Member updated successfully');
     }
@@ -76,6 +95,10 @@ class MemberController extends Controller
     public function destroy(string $id)
     {
         Member::destroy($id);
+
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Member deleted', 'id' => $id]);
+        }
 
         return redirect()->route('members.index')->with('success', 'Member deleted');
     }

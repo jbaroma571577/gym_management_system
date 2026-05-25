@@ -46,24 +46,39 @@
                 <tr class="border-b border-white/10">
                     <th class="p-2">Member</th>
                     <th class="p-2">Plan</th>
-                    <th class="p-2">Payment Method</th>
+                    <th class="p-2">Amount</th>
                     <th class="p-2">Reference</th>
                     <th class="p-2">Status</th>
+                    <th class="p-2">Actions</th>
                 </tr>
 
-                @forelse($memberships as $membership)
+                @forelse($payments as $payment)
                 <tr class="border-b border-white/5">
-                    <td class="p-2">{{ $membership->member->user->name ?? 'N/A' }}</td>
-                    <td class="p-2">{{ $membership->plan }}</td>
-                    <td class="p-2">{{ ucfirst($membership->payment_method) }}</td>
-                    <td class="p-2">{{ $membership->reference_number ?? '—' }}</td>
+                    <td class="p-2">{{ $payment->membership->member->user->name ?? 'N/A' }}</td>
+                    <td class="p-2">{{ $payment->membership->plan }}</td>
+                    <td class="p-2">₱{{ number_format($payment->amount, 2) }}</td>
+                    <td class="p-2">{{ $payment->reference_number ?? '—' }}</td>
                     <td class="p-2">
-                        @if($membership->status == 'pending')
+                        @if($payment->status == 'pending')
                             <span class="text-yellow-400">Pending</span>
-                        @elseif($membership->status == 'active')
-                            <span class="text-green-400">Active</span>
+                        @elseif($payment->status == 'paid')
+                            <span class="text-green-400">Paid</span>
                         @else
-                            <span class="text-red-400">{{ ucfirst($membership->status) }}</span>
+                            <span class="text-red-400">{{ ucfirst($payment->status) }}</span>
+                        @endif
+                    </td>
+                    <td class="p-2">
+                        @if($payment->status == 'pending')
+                            <form method="POST" action="/payment/{{ $payment->id }}/approve" class="inline">
+                                @csrf
+                                <button type="submit" class="text-green-400 hover:text-green-500">Approve</button>
+                            </form>
+                            <form method="POST" action="/payment/{{ $payment->id }}/reject" class="inline ml-3">
+                                @csrf
+                                <button type="submit" class="text-red-400 hover:text-red-500">Reject</button>
+                            </form>
+                        @else
+                            <span class="text-gray-400">No actions</span>
                         @endif
                     </td>
                 </tr>
@@ -72,7 +87,8 @@
                     <td colspan="5" class="p-2 text-center text-gray-500">No payments found.</td>
                 </tr>
                 @endforelse
-</div>
+            </table>
+        </div>
 
 </body>
 </html>

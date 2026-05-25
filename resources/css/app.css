@@ -4,7 +4,10 @@
 
 @layer utilities {
     .bg-app {
-        background: url('/images/auth.bg.png') no-repeat center center;
+        background: radial-gradient(circle at top left, rgba(255, 134, 34, 0.24), transparent 24%),
+                    radial-gradient(circle at bottom right, rgba(255, 102, 102, 0.16), transparent 22%),
+                    linear-gradient(180deg, #050505 0%, #090909 100%);
+        background-attachment: fixed;
         background-size: cover;
     }
 }
