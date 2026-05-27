@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_available',
     ];
 
     /**
@@ -45,11 +46,27 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_available' => 'boolean',
         ];
     }
 
     public function member()
     {
         return $this->hasOne(Member::class);
+    }
+
+    public function assignedMembers()
+    {
+        return $this->hasMany(Member::class, 'trainer_id');
+    }
+
+    public function isTrainer(): bool
+    {
+        return $this->role === 'trainer';
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->isTrainer() && $this->is_available;
     }
 }

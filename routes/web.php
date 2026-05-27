@@ -4,8 +4,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\WorkoutPlanController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\FeatureAccessController;
 use App\Models\Membership;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Route;
@@ -36,7 +38,7 @@ Route::get('/debug-auth', function () {
 */
 Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {
-        return view('admin.dashboard');
+        return redirect()->route('admin.dashboard');
     }
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
@@ -66,12 +68,16 @@ Route::middleware('auth')->group(function () {
         return view('attendance');
     })->name('attendance');
 
+    Route::get('/trainer-booking', [FeatureAccessController::class, 'trainerBooking'])->name('trainer.booking');
+    Route::get('/classes', [FeatureAccessController::class, 'groupClasses'])->name('group.classes');
+
     // ATTENDANCE CHECK IN
     Route::post('/attendance/checkin', [AttendanceController::class, 'checkIn'])->name('attendance.checkin');
     Route::post('/attendance/checkout', [AttendanceController::class, 'checkOut'])->name('attendance.checkout');
 
     // MEMBERSHIP SUBMISSION
     Route::post('/membership', [MembershipController::class, 'store']);
+    Route::post('/membership/change-plan', [MembershipController::class, 'changePlanByMember']);
 
     /*
     |--------------------------------------------------------------------------
@@ -84,8 +90,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/api/members', function () {
         return response()->json(auth()->user()->role === 'admin'
-            ? \App\Models\Member::with(['user', 'membership'])->get()
-            : (auth()->user()->member ? [\App\Models\Member::with(['user', 'membership'])->find(auth()->user()->member->id)] : []));
+            ? \App\Models\Member::with(['user', 'membership', 'trainer'])->get()
+            : (auth()->user()->member ? [\App\Models\Member::with(['user', 'membership', 'trainer'])->find(auth()->user()->member->id)] : []));
     });
 
     Route::get('/api/memberships', function () {
@@ -93,15 +99,27 @@ Route::middleware('auth')->group(function () {
             return response()->json(\App\Models\Membership::with('member.user')->latest()->get());
         }
         $member = auth()->user()->member;
-        return response()->json($member ? $member->membership : null);
+        if (!$member) {
+            return response()->json(null);
+        }
+        $member->load('trainer');
+        return response()->json($member->membership);
     });
 
     Route::get('/api/workout-plans', function () {
         if (auth()->user()->role === 'admin') {
             return response()->json(\App\Models\WorkoutPlan::with('member.user')->latest()->get());
         }
+
         $member = auth()->user()->member;
-        return response()->json($member ? \App\Models\WorkoutPlan::with('member.user')->where('member_id', $member->id)->get() : []);
+        if (! $member || ! $member->membership || ! $member->membership->isActiveWithValidity()) {
+            return response()->json([]);
+        }
+
+        return response()->json(\App\Models\WorkoutPlan::with('member.user')
+            ->where('member_id', $member->id)
+            ->forMembershipPlan($member->membership->plan)
+            ->get());
     });
     
     Route::get('/api/payments', [PaymentController::class, 'index']);
@@ -119,7 +137,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // ADMIN DASHBOARD
     Route::get('/admin/dashboard', function () {
         return view('admin.dashboard');
-    });
+    })->name('admin.dashboard');
 
     // ADMIN PAGES
     Route::get('/admin/payments', function () {
@@ -131,6 +149,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/payment/{id}/reject', [PaymentController::class, 'reject']);
 
     Route::get('/admin/workouts', [WorkoutPlanController::class, 'index']);
+    Route::get('/admin/trainers', [TrainerController::class, 'index']);
 
     // MEMBERSHIP MANAGEMENT
     Route::get('/admin/memberships', [MembershipController::class, 'index']);
@@ -150,6 +169,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/membership/{id}/activate', [MembershipController::class, 'activate']);
     Route::post('/membership/{id}/reject', [MembershipController::class, 'reject']);
+    Route::post('/membership/{id}/change-plan', [MembershipController::class, 'changePlan']);
 
     // MEMBERS CRUD
     Route::resource('members', MemberController::class);

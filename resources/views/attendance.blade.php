@@ -29,6 +29,47 @@
         <a href="{{ url('/dashboard') }}" class="text-orange-400 hover:text-orange-300">← Back to Dashboard</a>
     </div>
 
+    @php
+        $member = auth()->user()->member;
+        $membership = $member ? $member->membership : null;
+        $planInfo = $membership ? \App\Models\Membership::planDetails()[$membership->plan] ?? null : null;
+        $openAttendance = $member ? \App\Models\Attendance::where('member_id', $member->id)->whereDate('created_at', \Carbon\Carbon::today())->whereNull('time_out')->latest()->first() : null;
+        $checkinsToday = $member ? \App\Models\Attendance::where('member_id', $member->id)->whereDate('created_at', \Carbon\Carbon::today())->count() : 0;
+        $canCheckIn = $membership && $membership->isActiveWithValidity() && ! $openAttendance && (! isset($planInfo['daily_limit']) || $checkinsToday < $planInfo['daily_limit']);
+    @endphp
+
+    <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-slate-500/20 mb-6">
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+                <p class="text-gray-400 text-sm">Current membership</p>
+                <p class="text-xl font-semibold text-white">{{ $membership ? $membership->plan : 'No membership' }}</p>
+                <p class="text-gray-300">{{ $membership ? ($membership->status === 'active' ? 'Active membership' : ucfirst($membership->status).' membership') : 'Submit a membership application first.' }}</p>
+                @if($membership && ! empty($planInfo['features']))
+                    <ul class="mt-3 text-sm text-gray-400 list-disc list-inside space-y-1">
+                        @foreach($planInfo['features'] as $feature)
+                            <li>{{ $feature }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+            <div class="text-right">
+                @if($membership)
+                    <p class="text-gray-400 text-sm">Expires</p>
+                    <p class="text-white font-semibold">{{ $membership->expires_at ? $membership->expires_at->format('M d, Y') : 'Not set' }}</p>
+                    @if($membership->isExpired())
+                        <p class="text-red-400 text-sm mt-1">Membership expired. Renew to continue.</p>
+                    @elseif(isset($planInfo['weekly_limit']))
+                        <p class="text-gray-300 text-sm mt-1">{{ $checkinsThisWeek }} / {{ $planInfo['weekly_limit'] }} check-ins this week</p>
+                    @else
+                        <p class="text-gray-300 text-sm mt-1">Unlimited attendance under VIP plan.</p>
+                    @endif
+                @else
+                    <p class="text-gray-300">You must activate a membership before checking in.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- SUCCESS/WARNING MESSAGES -->
     @if(session('success'))
         <div class="bg-green-500/20 border border-green-500/50 text-green-400 p-4 rounded-lg mb-6">
@@ -61,29 +102,37 @@
                         ->whereDate('created_at', \Carbon\Carbon::today())
                         ->first() : null;
             @endphp
-            @if($todayCheckIn)
+            @if($openAttendance)
                 <div class="text-right">
                     <p class="text-green-400 font-bold text-2xl">✓ Checked In</p>
-                    <p class="text-gray-400 text-sm mt-1">{{ $todayCheckIn->time_in ? \Carbon\Carbon::parse($todayCheckIn->time_in)->format('H:i A') : $todayCheckIn->created_at->format('H:i A') }}</p>
-                    @if($todayCheckIn->time_out)
-                        <p class="text-blue-400 font-bold text-lg mt-2">✓ Checked Out</p>
-                        <p class="text-gray-400 text-sm">{{ \Carbon\Carbon::parse($todayCheckIn->time_out)->format('H:i A') }}</p>
-                    @else
-                        <form method="POST" action="{{ route('attendance.checkout') }}" class="mt-3">
-                            @csrf
-                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition transform hover:scale-105">
-                                🚪 CHECK OUT
-                            </button>
-                        </form>
-                    @endif
+                    <p class="text-gray-400 text-sm mt-1">{{ $openAttendance->time_in ? \Carbon\Carbon::parse($openAttendance->time_in)->format('H:i A') : $openAttendance->created_at->format('H:i A') }}</p>
+                    <form method="POST" action="{{ route('attendance.checkout') }}" class="mt-3">
+                        @csrf
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition transform hover:scale-105">
+                            🚪 CHECK OUT
+                        </button>
+                    </form>
                 </div>
             @else
-                <form method="POST" action="{{ route('attendance.checkin') }}">
-                    @csrf
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-bold transition transform hover:scale-105">
-                        🏋️ CHECK IN NOW
-                    </button>
-                </form>
+                @if($canCheckIn)
+                    <form method="POST" action="{{ route('attendance.checkin') }}">
+                        @csrf
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-bold transition transform hover:scale-105">
+                            🏋️ CHECK IN NOW
+                        </button>
+                    </form>
+                @else
+                    <div class="space-y-3">
+                        <p class="text-gray-300">You cannot check in at this time.</p>
+                        @if($membership && $membership->isExpired())
+                            <p class="text-red-400">Your membership has expired. Renew your plan to regain access.</p>
+                        @elseif($membership && isset($planInfo['daily_limit']) && $checkinsToday >= $planInfo['daily_limit'])
+                            <p class="text-yellow-300">Your {{ $membership->plan }} daily check-in limit has been reached.</p>
+                        @else
+                            <p class="text-gray-400">Please confirm your membership status with the gym or finish your current session.</p>
+                        @endif
+                    </div>
+                @endif
             @endif
         </div>
     </div>

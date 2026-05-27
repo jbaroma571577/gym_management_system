@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
     private function dashboardRedirect(): string
     {
         return auth()->user()->role === 'admin'
-            ? '/admin/dashboard'
+            ? route('admin.dashboard', absolute: false)
             : route('dashboard', absolute: false);
     }
 

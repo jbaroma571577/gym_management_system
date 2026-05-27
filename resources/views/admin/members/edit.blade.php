@@ -78,6 +78,23 @@
                     @endif
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-orange-400 mb-2">Assign Trainer</label>
+                    <select name="trainer_id" id="trainer_id" class="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-white">
+                        <option value="">No Trainer Assigned</option>
+                        @forelse($availableTrainers as $trainer)
+                            <option value="{{ $trainer->id }}" {{ $member->trainer_id == $trainer->id ? 'selected' : '' }}>
+                                {{ $trainer->name }} (Available)
+                            </option>
+                        @empty
+                            <option value="" disabled>No available trainers</option>
+                        @endforelse
+                    </select>
+                    @if($errors->has('trainer_id'))
+                        <p class="text-red-400 mt-2">{{ $errors->first('trainer_id') }}</p>
+                    @endif
+                </div>
+
                 <div class="flex items-center justify-end gap-4">
                     <a href="{{ route('members.show', $member) }}" class="text-gray-400 hover:text-gray-300">Cancel</a>
                     <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">

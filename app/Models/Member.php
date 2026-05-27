@@ -10,6 +10,7 @@ class Member extends Model
         'user_id',
         'phone',
         'goal',
+        'trainer_id',
     ];
 
     public function user()
@@ -19,7 +20,7 @@ class Member extends Model
 
     public function membership()
     {
-        return $this->hasOne(Membership::class);
+        return $this->hasOne(Membership::class)->latestOfMany();
     }
 
     public function workoutPlan()
@@ -30,5 +31,10 @@ class Member extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'trainer_id');
     }
 }

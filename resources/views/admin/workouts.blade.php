@@ -51,14 +51,19 @@
             <form method="POST" action="/admin/workouts">
                 @csrf
 
-                <select name="member_id" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" required>
+                <select id="member-select" name="member_id" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" required>
                     <option value="">Select Member</option>
                     @foreach($members as $member)
-                        <option value="{{ $member->id }}">{{ optional($member->user)->name ?? 'Member ' . $member->id }}</option>
+                        <option value="{{ $member->id }}" data-plan="{{ optional($member->membership)->plan ?? '' }}">
+                            {{ optional($member->user)->name ?? 'Member ' . $member->id }}
+                            @if(optional($member->membership)->plan)
+                                ({{ $member->membership->plan }})
+                            @endif
+                        </option>
                     @endforeach
                 </select>
 
-                <select name="program_type" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" required>
+                <select id="program-select" name="program_type" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" required>
                     <option value="">Select Program</option>
                     <option value="Fat Loss Program">Fat Loss Program</option>
                     <option value="Muscle Building Program">Muscle Building Program</option>
@@ -66,6 +71,8 @@
                     <option value="Health and Endurance Program">Health and Endurance Program</option>
                     <option value="Discipline and Lifestyle Change Program">Discipline and Lifestyle Change Program</option>
                 </select>
+
+                <p id="program-note" class="text-sm text-gray-400 mb-3">Select a member to see available workout programs for their membership tier.</p>
 
                 <textarea name="description" placeholder="Workout description/details" class="w-full mb-3 p-3 bg-black/40 border border-white/10 rounded-lg" rows="4" required></textarea>
 
@@ -109,6 +116,69 @@
     </div>
 
 </div>
+
+<script>
+    (function() {
+        const memberSelect = document.getElementById('member-select');
+        const programSelect = document.getElementById('program-select');
+        const note = document.getElementById('program-note');
+
+        const allowedPrograms = {
+            Basic: [
+                'Fat Loss Program',
+                'Muscle Building Program',
+                'Body Recomposition Program'
+            ],
+            Premium: [
+                'Fat Loss Program',
+                'Muscle Building Program',
+                'Body Recomposition Program',
+                'Health and Endurance Program'
+            ],
+            VIP: [
+                'Fat Loss Program',
+                'Muscle Building Program',
+                'Body Recomposition Program',
+                'Health and Endurance Program',
+                'Discipline and Lifestyle Change Program'
+            ]
+        };
+
+        function updateProgramOptions() {
+            const selectedMember = memberSelect.options[memberSelect.selectedIndex];
+            const plan = selectedMember?.dataset?.plan || '';
+            const options = Array.from(programSelect.options);
+
+            if (!plan) {
+                note.textContent = 'Select a member with an active membership plan to see available workout programs.';
+                programSelect.value = '';
+                options.forEach(opt => {
+                    opt.hidden = opt.value && opt.value !== '';
+                    opt.disabled = opt.hidden;
+                });
+                return;
+            }
+
+            const planOptions = allowedPrograms[plan] || [];
+            note.textContent = planOptions.length
+                ? `${plan} members can be assigned: ${planOptions.join(', ')}`
+                : 'No workout programs are available for this membership plan.';
+
+            options.forEach(opt => {
+                if (!opt.value) return;
+                const shouldShow = planOptions.includes(opt.value);
+                opt.hidden = !shouldShow;
+                opt.disabled = !shouldShow;
+                if (!shouldShow && opt.selected) {
+                    programSelect.value = '';
+                }
+            });
+        }
+
+        memberSelect.addEventListener('change', updateProgramOptions);
+        updateProgramOptions();
+    })();
+</script>
 
 </body>
 </html>

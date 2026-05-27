@@ -2,8 +2,8 @@
   <div class="flex">
     <aside class="w-64 bg-black/60 border-r border-orange-500/20 min-h-screen p-6">
       <div class="mb-8">
-        <h2 class="text-orange-400 text-xl font-bold">65★ GYM</h2>
-        <p class="text-gray-400 text-sm">Premium Member Portal</p>
+        <h2 class="text-orange-400 text-xl font-bold">Gym Management</h2>
+        <p class="text-gray-400 text-sm">Member Portal</p>
       </div>
       <nav class="space-y-2">
         <router-link :to="{ name: 'dashboard' }" class="block px-3 py-2 rounded hover:bg-white/5">Dashboard</router-link>

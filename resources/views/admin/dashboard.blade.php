@@ -28,6 +28,7 @@
             <a href="/admin/memberships" class="block px-4 py-2 rounded-lg hover:text-orange-400 hover:bg-white/5 transition">Memberships</a>
             <a href="/admin/payments" class="block px-4 py-2 rounded-lg hover:text-orange-400 hover:bg-white/5 transition">Payments</a>
             <a href="/admin/workouts" class="block px-4 py-2 rounded-lg hover:text-orange-400 hover:bg-white/5 transition">Workout Plans</a>
+            <a href="/admin/trainers" class="block px-4 py-2 rounded-lg hover:text-orange-400 hover:bg-white/5 transition">Trainers</a>
         </nav>
 
         <form method="POST" action="/logout" class="mt-10">
@@ -45,7 +46,7 @@
         </h1>
 
         <!-- STATS CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
 
             <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-orange-500/30 hover:border-orange-500/60 transition">
                 <div class="flex items-center justify-between">
@@ -89,6 +90,66 @@
                     <div class="text-blue-500/30 text-4xl">📍</div>
                 </div>
                 <p class="text-gray-500 text-xs mt-3">Check-ins today</p>
+            </div>
+
+            @php
+                $monthly = \App\Models\Payment::where('status', 'paid')
+                    ->whereMonth('created_at', \Carbon\Carbon::now()->month)
+                    ->whereYear('created_at', \Carbon\Carbon::now()->year)
+                    ->sum('amount');
+
+                if (class_exists(\NumberFormatter::class)) {
+                    try {
+                        $locale = app()->getLocale() ?: 'en_PH';
+                        $fmt = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+                        $monthlyFormatted = $fmt->formatCurrency($monthly, 'PHP');
+                    } catch (\Throwable $e) {
+                        $monthlyFormatted = '₱' . number_format($monthly, 2);
+                    }
+                } else {
+                    $monthlyFormatted = '₱' . number_format($monthly, 2);
+                }
+            @endphp
+
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-green-500/30 hover:border-green-500/60 transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-2">Monthly Revenue</p>
+                        <p class="text-3xl font-bold text-green-300">{{ $monthlyFormatted }}</p>
+                    </div>
+                    <div class="text-green-500/30 text-4xl">💰</div>
+                </div>
+                <p class="text-gray-500 text-xs mt-3">Sum of approved payments for the current month</p>
+            </div>
+
+            @php
+                $paymentsThisMonth = \App\Models\Payment::with('membership')
+                    ->where('status', 'paid')
+                    ->whereMonth('created_at', \Carbon\Carbon::now()->month)
+                    ->whereYear('created_at', \Carbon\Carbon::now()->year)
+                    ->get();
+
+                $plans = ['Basic', 'Premium', 'VIP'];
+                $planTotals = [];
+                foreach ($plans as $plan) {
+                    $filtered = $paymentsThisMonth->filter(function ($p) use ($plan) {
+                        return optional($p->membership)->plan === $plan;
+                    });
+                    $planTotals[$plan] = [
+                        'count' => $filtered->count(),
+                        'sum' => $filtered->sum('amount'),
+                    ];
+                }
+            @endphp
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @foreach($planTotals as $planName => $data)
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                        <p class="text-sm text-gray-400">{{ $planName }}</p>
+                        <p class="text-xl font-bold text-green-300">{{ class_exists(\NumberFormatter::class) ? (new \NumberFormatter(app()->getLocale()?:'en_PH', \NumberFormatter::CURRENCY))->formatCurrency($data['sum'], 'PHP') : '₱'.number_format($data['sum'],2) }}</p>
+                        <p class="text-xs text-gray-400 mt-2">Payments: {{ $data['count'] }}</p>
+                    </div>
+                @endforeach
             </div>
 
         </div>

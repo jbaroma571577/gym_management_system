@@ -51,9 +51,10 @@
             <table class="w-full text-left text-gray-300">
                 <tr class="border-b border-white/10">
                     <th class="p-2">Member</th>
+                    <th class="p-2">Email</th>
                     <th class="p-2">Plan</th>
-                    <th class="p-2">Payment Method</th>
                     <th class="p-2">Status</th>
+                    <th class="p-2">Expires</th>
                     <th class="p-2">Applied Date</th>
                     <th class="p-2">Actions</th>
                 </tr>
@@ -61,17 +62,25 @@
                 @forelse($memberships as $membership)
                 <tr class="border-b border-white/5">
                     <td class="p-2">{{ $membership->member->user->name ?? 'N/A' }}</td>
-                    <td class="p-2">{{ $membership->plan }}</td>
-                    <td class="p-2">{{ $membership->payment_method }}</td>
+                    <td class="p-2 text-gray-300">{{ $membership->member->user->email ?? '-' }}</td>
+                    <td class="p-2">
+                        @php
+                            $planData = \App\Models\Membership::planDetails()[$membership->plan] ?? null;
+                        @endphp
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold {{ $planData['badge_class'] ?? 'bg-slate-500/15 text-slate-300' }}">
+                            {{ $membership->plan }}
+                        </span>
+                    </td>
                     <td class="p-2">
                         @if($membership->status == 'pending')
                             <span class="text-yellow-400">Pending</span>
                         @elseif($membership->status == 'active')
                             <span class="text-green-400">Active</span>
                         @else
-                            <span class="text-red-400">{{ $membership->status }}</span>
+                            <span class="text-red-400">{{ ucfirst($membership->status) }}</span>
                         @endif
                     </td>
+                    <td class="p-2">{{ $membership->expires_at ? $membership->expires_at->format('M d, Y') : 'TBD' }}</td>
                     <td class="p-2">{{ $membership->created_at->format('M d, Y') }}</td>
                     <td class="p-2">
                         @if($membership->status == 'pending')
@@ -82,6 +91,16 @@
                             <form method="POST" action="/membership/{{ $membership->id }}/reject" class="inline">
                                 @csrf
                                 <button type="submit" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm text-white transition">Reject</button>
+                            </form>
+                        @elseif($membership->status == 'active')
+                            <form method="POST" action="/membership/{{ $membership->id }}/change-plan" class="flex items-center gap-2">
+                                @csrf
+                                <select name="plan" class="bg-black/40 border border-white/10 text-white rounded-lg p-2 text-sm">
+                                    @foreach(['Basic', 'Premium', 'VIP'] as $plan)
+                                        <option value="{{ $plan }}" {{ $membership->plan === $plan ? 'selected' : '' }}>{{ $plan }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 px-3 py-1 rounded text-sm text-white transition">Update</button>
                             </form>
                         @else
                             <span class="text-gray-500">No actions</span>

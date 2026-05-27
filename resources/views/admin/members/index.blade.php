@@ -58,6 +58,7 @@
                         <th class="p-2">Name</th>
                         <th class="p-2">Phone</th>
                         <th class="p-2">Goal</th>
+                        <th class="p-2">Trainer</th>
                         <th class="p-2">Actions</th>
                     </tr>
 
@@ -67,6 +68,13 @@
                         <td class="p-2">{{ $member->user->name ?? 'N/A' }}</td>
                         <td class="p-2">{{ $member->phone ?? 'N/A' }}</td>
                         <td class="p-2 text-orange-400">{{ $member->goal ?? 'N/A' }}</td>
+                        <td class="p-2">
+                            @if($member->trainer)
+                                <span class="text-green-400">{{ $member->trainer->name }}</span>
+                            @else
+                                <span class="text-gray-500">Unassigned</span>
+                            @endif
+                        </td>
                         <td class="p-2">
                             <a href="{{ route('members.show', $member) }}" class="text-blue-400 hover:text-blue-300 mr-3">View</a>
                             <a href="{{ route('members.edit', $member) }}" class="text-indigo-400 hover:text-indigo-300 mr-3">Edit</a>
@@ -79,7 +87,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="p-2 text-center text-gray-500">No members found.</td>
+                        <td colspan="6" class="p-2 text-center text-gray-500">No members found.</td>
                     </tr>
                     @endforelse
 

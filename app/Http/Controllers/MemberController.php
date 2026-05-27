@@ -12,7 +12,7 @@ class MemberController extends Controller
      */
     public function index()
     {
-        $members = Member::all();
+        $members = Member::with('user', 'trainer')->get();
         if (request()->wantsJson()) {
             return response()->json($members);
         }
@@ -25,7 +25,11 @@ class MemberController extends Controller
      */
     public function create()
     {
-        return view('admin.members.create');
+        $availableTrainers = \App\Models\User::where('role', 'trainer')
+            ->where('is_available', true)
+            ->get();
+        
+        return view('admin.members.create', compact('availableTrainers'));
     }
 
     /**
@@ -33,13 +37,22 @@ class MemberController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'user_id' => 'required',
             'phone' => 'nullable',
             'goal' => 'nullable',
+            'trainer_id' => 'nullable|integer|exists:users,id',
         ]);
 
-        $member = Member::create($request->all());
+        // Validate trainer is available if provided
+        if ($validated['trainer_id']) {
+            $trainer = \App\Models\User::findOrFail($validated['trainer_id']);
+            if ($trainer->role !== 'trainer' || !$trainer->is_available) {
+                return redirect()->back()->withErrors(['trainer_id' => 'Selected trainer is not available or is not a trainer.']);
+            }
+        }
+
+        $member = Member::create($validated);
 
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Member created', 'member' => $member]);
@@ -53,7 +66,7 @@ class MemberController extends Controller
      */
     public function show(string $id)
     {
-        $member = Member::findOrFail($id);
+        $member = Member::with('user', 'trainer')->findOrFail($id);
         if (request()->wantsJson()) {
             return response()->json($member);
         }
@@ -67,11 +80,15 @@ class MemberController extends Controller
     public function edit(string $id)
     {
         $member = Member::findOrFail($id);
+        $availableTrainers = \App\Models\User::where('role', 'trainer')
+            ->where('is_available', true)
+            ->get();
+        
         if (request()->wantsJson()) {
             return response()->json($member);
         }
 
-        return view('admin.members.edit', compact('member'));
+        return view('admin.members.edit', compact('member', 'availableTrainers'));
     }
 
     /**
@@ -81,7 +98,22 @@ class MemberController extends Controller
     {
         $member = Member::findOrFail($id);
 
-        $member->update($request->all());
+        $validated = $request->validate([
+            'user_id' => 'required',
+            'phone' => 'nullable',
+            'goal' => 'nullable',
+            'trainer_id' => 'nullable|integer|exists:users,id',
+        ]);
+
+        // Validate trainer is available if provided
+        if ($validated['trainer_id']) {
+            $trainer = \App\Models\User::findOrFail($validated['trainer_id']);
+            if ($trainer->role !== 'trainer' || !$trainer->is_available) {
+                return redirect()->back()->withErrors(['trainer_id' => 'Selected trainer is not available or is not a trainer.']);
+            }
+        }
+
+        $member->update($validated);
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Member updated', 'member' => $member]);
         }

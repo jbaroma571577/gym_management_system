@@ -14,25 +14,53 @@ class AttendanceController extends Controller
     {
         $member = auth()->user()->member;
 
-        if (!$member) {
+        if (! $member) {
             $member = Member::create([
                 'user_id' => auth()->id(),
             ]);
         }
 
-        // Check if already checked in today
-        $existingCheckIn = Attendance::where('member_id', $member->id)
-            ->whereDate('created_at', Carbon::today())
-            ->first();
-
-        if ($existingCheckIn) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => 'You have already checked in today!'], 409);
+        $membership = $member->membership;
+        if (! $membership || ! $membership->isActiveWithValidity()) {
+            $message = 'You need an active membership to check in. Please apply or wait for admin approval.';
+            if ($membership && $membership->isExpired()) {
+                $message = 'Your membership has expired. Please contact the gym to renew your plan.';
             }
-            return redirect()->back()->with('warning', 'You have already checked in today!');
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return redirect()->back()->with('warning', $message);
         }
 
-        // Create attendance record
+        $openAttendance = Attendance::where('member_id', $member->id)
+            ->whereNull('time_out')
+            ->latest()
+            ->first();
+
+        if ($openAttendance) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Please check out from your current session before checking in again.'], 409);
+            }
+            return redirect()->back()->with('warning', 'Please check out from your current session before checking in again.');
+        }
+
+        $dailyLimit = $membership->getDailyLimit();
+        if ($dailyLimit !== null) {
+            $checkinsToday = Attendance::where('member_id', $member->id)
+                ->whereDate('created_at', Carbon::today())
+                ->count();
+
+            if ($checkinsToday >= $dailyLimit) {
+                $message = sprintf('Your %s plan allows %d check-in per day. Please come back tomorrow or upgrade your plan.', $membership->plan, $dailyLimit);
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $message], 403);
+                }
+                return redirect()->back()->with('warning', $message);
+            }
+        }
+
         Attendance::create([
             'member_id' => $member->id,
             'date' => Carbon::today(),

@@ -102,9 +102,38 @@
 
         </div>
 
-    </div>
-
-</div>
+        <!-- TRAINER ASSIGNMENT -->
+        <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-purple-500/30 mt-6">
+            <h2 class="text-purple-400 font-bold mb-4">Assigned Trainer</h2>
+            <div class="space-y-3 text-gray-300">
+                @if($member->trainer)
+                    <div>
+                        <p class="text-gray-400 text-sm">Trainer Name</p>
+                        <p class="font-medium text-purple-300">{{ $member->trainer->name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Email</p>
+                        <p class="font-medium">{{ $member->trainer->email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Status</p>
+                        <p class="font-medium">
+                            @if($member->trainer->is_available)
+                                <span class="text-green-400">Available</span>
+                            @else
+                                <span class="text-red-400">Not Available</span>
+                            @endif
+                        </p>
+                    </div>
+                @else
+                    <p class="text-gray-500 italic">No trainer assigned to this member yet.</p>
+                @endif
+            </div>
+            <div class="mt-4">
+                <a href="{{ route('members.edit', $member) }}" class="text-purple-400 hover:text-purple-300">
+                    Assign/Change Trainer →
+                </a>
+            </div>
 
 </body>
 </html>
